@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "910646801163",
+    "firebase_url": "https://nadhir-e4614-default-rtdb.firebaseio.com",
+    "project_id": "nadhir-e4614",
+    "storage_bucket": "nadhir-e4614.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:910646801163:android:6b1ee00dc2a747612ca80e",
+        "android_client_info": {
+          "package_name": "com.example.nadhir"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "910646801163-u7hmssmtgrsavja419ie1n9s5app3ot8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.nadhir",
+            "certificate_hash": "f2a4909d38dcf427575cb4eae0f21417b6335382"
+          }
+        },
+        {
+          "client_id": "910646801163-0if79ba1ciqcuek1f15c24ai78s01ovk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_DBjBROw6aSacXq40ml7BB0Qt1n7ySlI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "910646801163-0if79ba1ciqcuek1f15c24ai78s01ovk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
