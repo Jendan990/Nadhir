@@ -72,7 +72,7 @@ public class NadhirDBHelper extends SQLiteOpenHelper {
         cv.put(COLUMN_LOCATION,location);
         //invoking insert method to add data to db
         long cursor = sqLiteDatabase.insert(TABLE_HOUSES,null,cv);
-        if (cursor == -1){
+        if (cursor == 0){
             sqLiteDatabase.close();
             return false;
         }else {
@@ -90,7 +90,7 @@ public class NadhirDBHelper extends SQLiteOpenHelper {
         cv.put(COLUMN_LOCATION,cloudData.getLocation());
         //invoking insert method to add data to db
         long cursor = sqLiteDatabase.update(TABLE_HOUSES,cv,"HOUSE_NAME=?",new String[]{cloudData.getHouseNumber()});
-        if (cursor == -1){
+        if (cursor == 0){
             sqLiteDatabase.close();
             return false;
         }else {
@@ -114,7 +114,7 @@ public class NadhirDBHelper extends SQLiteOpenHelper {
         contentValues.put(COLUMN_END_TIME, dateFormat.format(cloudData.getDateOut()));
         //invoking insert method to add data to db
         long cursor = sqLiteDatabase.insert(TABLE_APP_DETAILS,null,contentValues);
-        if (cursor == -1){
+        if (cursor == 0){
             sqLiteDatabase.close();
             return false;
         }else {
@@ -139,7 +139,8 @@ public class NadhirDBHelper extends SQLiteOpenHelper {
         contentValues.put(COLUMN_END_TIME,dateFormat.format(cloudData.getDateOut()));
         //invoking update method to update data present in db
         long cursor = sqLiteDatabase.update(TABLE_APP_DETAILS,contentValues,"HOUSE_NAME=? AND ROOM_NUMBER=?",new String[]{cloudData.getHouseNumber(),cloudData.getRoomNumber()});
-        if (cursor == -1){
+        System.out.println("cursor value : "+cursor);
+        if (cursor == 0){
             sqLiteDatabase.close();
             return false;
         }else {
@@ -155,7 +156,7 @@ public class NadhirDBHelper extends SQLiteOpenHelper {
         cv.put(COLUMN_STATUS,status);
         long result = sqLiteDatabase.update(TABLE_APP_DETAILS,cv,"HOUSE_NAME=? AND ROOM_NUMBER=?",new String[]{house,room});
         sqLiteDatabase.close();
-        if (result ==-1){
+        if (result == 0){
             return false;
         }else {
             return true;
@@ -167,7 +168,7 @@ public class NadhirDBHelper extends SQLiteOpenHelper {
         sqLiteDatabase = this.getWritableDatabase();
         //invoking delete method of our db
         long result = sqLiteDatabase.delete(TABLE_APP_DETAILS,"HOUSE_NAME=? AND ROOM_NUMBER=?",new String[]{house,room});
-        if (result == -1){
+        if (result == 0){
             sqLiteDatabase.close();
             return false;
         }else {
@@ -188,7 +189,7 @@ public class NadhirDBHelper extends SQLiteOpenHelper {
         if (cursor.moveToFirst()){
             do {
                 long result = sqLiteDatabase.delete(TABLE_APP_DETAILS,"HOUSE_NAME=?",new String[]{house});
-                if (result == -1){
+                if (result == 0){
                     System.out.println("an unknown error occurred");
                 }else {
                     System.out.println("item deleted");
@@ -216,7 +217,7 @@ public class NadhirDBHelper extends SQLiteOpenHelper {
         }
 
         long result = sqLiteDatabase.delete(TABLE_HOUSES,"HOUSE_NAME=?",new String[]{house});
-        if (result == -1){
+        if (result == 0){
             System.out.println("an error occurred");
             Toast.makeText(context, "an unknown error occurred", Toast.LENGTH_SHORT).show();
         }else {

@@ -285,19 +285,25 @@ public class MainActivity extends AppCompatActivity implements RecyclerItem {
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
                                 for (DataSnapshot cloud :snapshot.getChildren()){
                                     CloudData data = cloud.getValue(CloudData.class);
+                                    System.out.println(data.getLocation());
                                     if (data != null){
-                                        if (!helper.dataUpdateCloudDB(data)){
+                                        System.out.println(helper.dataUpdateCloudDB(data));
+                                        if (helper.dataUpdateCloudDB(data)){
                                             //update failed because no such data exits so we gonna add it
-                                            helper.dataAddCloudDB(data);
+                                            Toast.makeText(MainActivity.this, "Data updated", Toast.LENGTH_SHORT).show();
                                         }else {
                                             //
+                                            helper.dataAddCloudDB(data);
+                                            Toast.makeText(MainActivity.this, "Data Added", Toast.LENGTH_SHORT).show();
                                         }
 
-                                        if (!helper.updateMainHomeData(data)){
+                                        if (helper.updateMainHomeData(data)){
                                             //update failed because no such data exits so we gonna add it
-                                            helper.addMainHomeData(data.getHouseNumber(),data.getLocation());
+                                            Toast.makeText(MainActivity.this, "Data updated", Toast.LENGTH_SHORT).show();
                                         }else {
                                             //
+                                            helper.addMainHomeData(data.getHouseNumber(),data.getLocation());
+                                            Toast.makeText(MainActivity.this, "Data Added", Toast.LENGTH_SHORT).show();
                                         }
                                     }
 
