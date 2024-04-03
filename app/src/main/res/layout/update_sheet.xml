@@ -63,7 +63,8 @@
                 android:id="@+id/text_tenant_number_edit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Tenant number"/>
+                android:hint="Tenant number"
+                android:inputType="number"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -101,7 +102,8 @@
                 android:id="@+id/text_rent_price_edit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Rent price"/>
+                android:hint="Rent price"
+                android:inputType="number"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 

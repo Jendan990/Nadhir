@@ -3,11 +3,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/more"
-        android:title="sync"
-        app:showAsAction="never"/>
-
-    <item
         android:id="@+id/logout"
         android:title="logout"
         app:showAsAction="never"/>

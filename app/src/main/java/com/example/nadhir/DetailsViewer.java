@@ -38,7 +38,6 @@ public class DetailsViewer extends AppCompatActivity {
     private DatePickerDialog pickerDialog;
     private Date date;
     private DatabaseReference databaseReference;
-    NadhirDBHelper helper;
     Dialog dialog;
     SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
 
@@ -46,7 +45,6 @@ public class DetailsViewer extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_details_viewer);
-        helper = new NadhirDBHelper(this);
         databaseReference = FirebaseDatabase.getInstance().getReference("Nadhir/"+getIntent().getStringExtra("cloud_house"));
         houseId = findViewById(R.id.chip_house_id);
         location = findViewById(R.id.chip_location);
@@ -129,50 +127,38 @@ public class DetailsViewer extends AppCompatActivity {
             throw new RuntimeException(ex);
         }
 
-        CloudData cloudData = new CloudData(getIntent().getStringExtra("cloud_house"),"OutsideTenants",
-                tenantName.getText().toString(),tenantNumber.getText().toString(),getIntent().getStringExtra("cloud_id"),
-                getIntent().getStringExtra("cloud_location"),Double.valueOf(rentPrice.getText().toString()),date);
+        CloudData cloudData = new CloudData(getIntent().getStringExtra("cloud_house"), getIntent().getStringExtra("cloud_category"),
+                tenantName.getText().toString(), tenantNumber.getText().toString(), getIntent().getStringExtra("cloud_id"),
+                getIntent().getStringExtra("cloud_location"), Double.valueOf(rentPrice.getText().toString()), date);
 
-        boolean status = helper.dataUpdateCloudDB(cloudData);
-        if (status){
-            tenantName.setText("");
-            tenantNumber.setText("");
-            roomID.setText("");
-            endDate.setText("");
-            Toast.makeText(DetailsViewer.this, "Data added successful", Toast.LENGTH_SHORT).show();
-            dialog.dismiss();
+        HashMap hashMap = new HashMap();
+        hashMap.put("houseNumber", cloudData.getHouseNumber());
+        hashMap.put("category", cloudData.getCategory());
+        hashMap.put("tenantName", cloudData.getTenantName());
+        hashMap.put("tenantPhone", cloudData.getTenantPhone());
+        hashMap.put("roomNumber", cloudData.getRoomNumber());
+        hashMap.put("location", cloudData.getLocation());
+        hashMap.put("rentPrice", cloudData.getRentPrice());
+        hashMap.put("dateOut", cloudData.getDateOut());
 
-            HashMap hashMap = new HashMap();
-            hashMap.put("houseNumber",cloudData.getHouseNumber());
-            hashMap.put("category",cloudData.getCategory());
-            hashMap.put("tenantName",cloudData.getTenantName());
-            hashMap.put("tenantPhone",cloudData.getTenantPhone());
-            hashMap.put("roomNumber",cloudData.getRoomNumber());
-            hashMap.put("location",cloudData.getLocation());
-            hashMap.put("rentPrice",cloudData.getRentPrice());
-            hashMap.put("dateOut",cloudData.getDateOut());
-
-            String dataId = cloudData.getHouseNumber().concat("_").concat(cloudData.getRoomNumber());
-            databaseReference.child(dataId).updateChildren(hashMap).addOnCompleteListener(new OnCompleteListener() {
-                @Override
-                public void onComplete(@NonNull Task task) {
-                    if (task.isSuccessful()){
-                        helper.updateStat(cloudData.getHouseNumber(),cloudData.getRoomNumber(),true);
-                        progressDialog.dismiss();
-                        Toast.makeText(DetailsViewer.this, "cloud update successfully", Toast.LENGTH_SHORT).show();
-                    }else {
-                        helper.updateStat(cloudData.getHouseNumber(),cloudData.getRoomNumber(),false);
-                        progressDialog.dismiss();
-                        Toast.makeText(DetailsViewer.this, "cloud update failed", Toast.LENGTH_SHORT).show();
-                    }
+        String dataId = cloudData.getHouseNumber().concat("_" + cloudData.getCategory()).concat("_" + cloudData.getRoomNumber());
+        databaseReference.child(dataId).updateChildren(hashMap).addOnCompleteListener(new OnCompleteListener() {
+            @Override
+            public void onComplete(@NonNull Task task) {
+                if (task.isSuccessful()) {
+                    progressDialog.dismiss();
+                    //clearing all text fields in the dialog and dismiss it.
+                    tenantName.setText("");tenantNumber.setText("");roomID.setText("");endDate.setText("");
+                    dialog.dismiss();
+                    Toast.makeText(DetailsViewer.this, "cloud update successfully", Toast.LENGTH_SHORT).show();
+                } else {
+                    progressDialog.dismiss();
+                    Toast.makeText(DetailsViewer.this, "cloud update failed", Toast.LENGTH_SHORT).show();
                 }
-            });
-
-        }else {
-            progressDialog.dismiss();
-            Toast.makeText(DetailsViewer.this, "unknown error occurred,data addition failed", Toast.LENGTH_SHORT).show();
-        }
+            }
+        });
     }
+
 
     public void dateMaker(){
         DatePickerDialog.OnDateSetListener dateSetListener = new DatePickerDialog.OnDateSetListener() {

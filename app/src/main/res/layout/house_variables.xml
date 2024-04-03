@@ -58,31 +58,14 @@
            android:hint="House name / number"/>
    </com.google.android.material.textfield.TextInputLayout>
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/edit_lay_2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/edit_lay_1"
-        android:layout_marginTop="20dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="10dp">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/text_location_or_place"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Location / place "/>
-    </com.google.android.material.textfield.TextInputLayout>
 
     <Button
         android:id="@+id/btn_confirm"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="@id/edit_lay_2"
-        app:layout_constraintEnd_toEndOf="@id/edit_lay_2"
-        app:layout_constraintTop_toBottomOf="@id/edit_lay_2"
+        app:layout_constraintStart_toStartOf="@id/edit_lay_1"
+        app:layout_constraintEnd_toEndOf="@id/edit_lay_1"
+        app:layout_constraintTop_toBottomOf="@id/edit_lay_1"
         android:layout_marginTop="20dp"
         android:layout_marginStart="60dp"
         android:layout_marginEnd="60dp"

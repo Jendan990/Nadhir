@@ -57,26 +57,20 @@ public class InsideOutDataAdapter extends RecyclerView.Adapter<InsideOutDataAdap
                     .setPositiveButton("continue", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            boolean stat = new NadhirDBHelper(context).deleteTenant(arrayList.get(pos).getHouseNumber(),arrayList.get(pos).getRoomNumber());
-                            if (stat){
-                                Toast.makeText(context, "tenant deleted on local", Toast.LENGTH_SHORT).show();
                                 //for the cloud delete
                                 DatabaseReference reference = FirebaseDatabase.getInstance().getReference("Nadhir/"+arrayList.get(pos).getHouseNumber());
-                                String id = arrayList.get(pos).getHouseNumber().concat("_").concat(arrayList.get(pos).getRoomNumber());
+                                String id = arrayList.get(pos).getHouseNumber().concat("_"+arrayList.get(pos).getCategory()).concat("_"+arrayList.get(pos).getRoomNumber());
                                 reference.child(id).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
                                     @Override
                                     public void onComplete(@NonNull Task<Void> task) {
                                         if (task.isSuccessful()){
-                                            Toast.makeText(context, "tenant removed from database", Toast.LENGTH_SHORT).show();
+                                            deleteItem(pos);
+                                            Toast.makeText(context, "tenant removed from cloud", Toast.LENGTH_SHORT).show();
                                         }else {
-                                            Toast.makeText(context, "tenant removal failed", Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(context, "tenant removal failed,please check your internet connection.", Toast.LENGTH_SHORT).show();
                                         }
                                     }
                                 });
-
-                            }else {
-                                Toast.makeText(context, "deletion failed", Toast.LENGTH_SHORT).show();
-                            }
                         }
                     })
                     .setNegativeButton("cancel",null)
@@ -110,4 +104,17 @@ public class InsideOutDataAdapter extends RecyclerView.Adapter<InsideOutDataAdap
             });
         }
     }
+
+    void deleteItem(int pos){
+        //removing the deleted item from the arraylist
+        arrayList.remove(pos);
+        //notify the item removal
+        notifyItemRemoved(pos);
+        //checking on the listener of the event and notify it
+        if (recyclerItem != null){
+            recyclerItem.onItemDeleted();
+        }
+
+    }
+
 }

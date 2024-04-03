@@ -19,9 +19,12 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -43,8 +46,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -53,6 +59,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity implements RecyclerItem {
     private static final int PERMISSION_REQUEST = 100;
@@ -62,11 +69,12 @@ public class MainActivity extends AppCompatActivity implements RecyclerItem {
     RecyclerView recyclerView;
     SwipeRefreshLayout swipeRefreshLayout;
     ActivityResultLauncher<Intent> resultLauncher;
-    ArrayList<MainData> mainDataArrayList;
+    ArrayList<String> mainDataArrayList;
     ArrayList<CloudData> cloudDataArrayList;
-    ArrayList<CloudData> updateCloudArray;
+    TextInputEditText house_name;
+    Dialog bottom;
     private DatabaseReference reference,reference1;
-    NadhirDBHelper helper;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,7 +83,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerItem {
         ActionBar bar = getSupportActionBar();
         bar.setTitle("Luvanda Enterprises");
         bar.setElevation(0);
-        helper = new NadhirDBHelper(this);
         swipeRefreshLayout = findViewById(R.id.swiper);
         recyclerView = findViewById(R.id.recycler);
         cloudDataArrayList = new ArrayList<>();
@@ -120,13 +127,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerItem {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.mainmenu,menu);
-
-        MenuItem sync = menu.findItem(R.id.more);
-        sync.setOnMenuItemClickListener(menuItem ->{
-            loadCloudData();
-            return true;
-        });
-
         MenuItem logout = menu.findItem(R.id.logout);
         logout.setOnMenuItemClickListener(menuItem ->{
             signInClient.signOut().addOnCompleteListener(new OnCompleteListener<Void>() {
@@ -213,21 +213,20 @@ public class MainActivity extends AppCompatActivity implements RecyclerItem {
 
     public void addingNewHouse(){
          //creating a bottom navigator for adding the house variables
-        final Dialog bottom = new BottomSheetDialog(MainActivity.this);
+        bottom = new BottomSheetDialog(MainActivity.this);
         bottom.requestWindowFeature(Window.FEATURE_NO_TITLE);
         bottom.setContentView(R.layout.house_variables);
 
         //initializing components of the bottom sheet
-        TextInputEditText house_name = bottom.findViewById(R.id.text_name_or_number);
-        TextInputEditText location = bottom.findViewById(R.id.text_location_or_place);
+        house_name = bottom.findViewById(R.id.text_name_or_number);
         Button confirm  = bottom.findViewById(R.id.btn_confirm);
         ImageView cancel =  bottom.findViewById(R.id.btn_cancel);
 
-        confirm.setOnClickListener(e->{
-            onConfirmAddition(house_name.getText().toString(),location.getText().toString());
+        Objects.requireNonNull(confirm).setOnClickListener(e->{
+                onConfirmAddition(house_name.getText().toString());
         });
 
-        cancel.setOnClickListener(e->{
+        Objects.requireNonNull(cancel).setOnClickListener(e->{
             bottom.dismiss();
         });
 
@@ -236,15 +235,25 @@ public class MainActivity extends AppCompatActivity implements RecyclerItem {
         bottom.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
     }
 
-    public void onConfirmAddition(String name,String location){
-        //implement the logic for adding house data in local database and also creating its resource in cloud
-        if ((name != null) && (location != null)){
-            boolean state = helper.addMainHomeData(name, location);
-            if (state){
-                Toast.makeText(MainActivity.this, "Item Added", Toast.LENGTH_SHORT).show();
-            }else {
-                Toast.makeText(MainActivity.this, "an error occurred,item not added", Toast.LENGTH_SHORT).show();
-            }
+    public void onConfirmAddition(String name){
+        //adding main house data to cloud.
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        if (name != null){
+            reference1 = database.getReference("Nadhir");
+            reference1.child(name).setValue("").addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void unused) {
+                    Toast.makeText(MainActivity.this, "Data Added Successful", Toast.LENGTH_SHORT).show();
+                    house_name.setText("");
+                    bottom.dismiss();
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Toast.makeText(MainActivity.this, "Data Addition failed,please retry or check internet connection", Toast.LENGTH_SHORT).show();
+                }
+            });
+
         }else {
             new AlertDialog.Builder(MainActivity.this)
                     .setMessage("one or both of the fields are empty")
@@ -256,87 +265,46 @@ public class MainActivity extends AppCompatActivity implements RecyclerItem {
     }
 
     public void obtainData(){
+        reference = FirebaseDatabase.getInstance().getReference("Nadhir");
         mainDataArrayList = new ArrayList<>();
-        mainDataArrayList = helper.getMainHomeDetails(MainActivity.this);
         mainAdapter = new MainAdapter(MainActivity.this,mainDataArrayList,this);
         recyclerView.setAdapter(mainAdapter);
         recyclerView.setLayoutManager(new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL));
-        mainAdapter.notifyDataSetChanged();
-    }
-
-
-
-    public void loadCloudData(){
-        ProgressDialog dialog = new ProgressDialog(MainActivity.this);
-        dialog.setIndeterminate(true);
-        dialog.setMessage("please wait...");
-        dialog.show();
-        reference = FirebaseDatabase.getInstance().getReference("Nadhir");
+        
+        //loading data from firebase database.
         reference.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for (DataSnapshot dataSnapshot: snapshot.getChildren()){
-                    String keys = dataSnapshot.getKey();
-                    System.out.println(keys);
-                    if (keys != null){
-                        reference1 = FirebaseDatabase.getInstance().getReference("Nadhir/"+keys);
-                        reference1.addValueEventListener(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                for (DataSnapshot cloud :snapshot.getChildren()){
-                                    CloudData data = cloud.getValue(CloudData.class);
-                                    System.out.println(data.getLocation());
-                                    if (data != null){
-                                        System.out.println(helper.dataUpdateCloudDB(data));
-                                        if (helper.dataUpdateCloudDB(data)){
-                                            //update failed because no such data exits so we gonna add it
-                                            Toast.makeText(MainActivity.this, "Data updated", Toast.LENGTH_SHORT).show();
-                                        }else {
-                                            //
-                                            helper.dataAddCloudDB(data);
-                                            Toast.makeText(MainActivity.this, "Data Added", Toast.LENGTH_SHORT).show();
-                                        }
-
-                                        if (helper.updateMainHomeData(data)){
-                                            //update failed because no such data exits so we gonna add it
-                                            Toast.makeText(MainActivity.this, "Data updated", Toast.LENGTH_SHORT).show();
-                                        }else {
-                                            //
-                                            helper.addMainHomeData(data.getHouseNumber(),data.getLocation());
-                                            Toast.makeText(MainActivity.this, "Data Added", Toast.LENGTH_SHORT).show();
-                                        }
-                                    }
-
-                                }
-                            }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError error) {
-                                Toast.makeText(MainActivity.this, "cloud sync failed", Toast.LENGTH_SHORT).show();
-                                dialog.dismiss();
-                            }
-                        });
-                    }
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                //for this section will obtain keys only (house numbers or names)
+                for (DataSnapshot snap :
+                        dataSnapshot.getChildren()) {
+                    String _names = snap.getKey();
+                    mainDataArrayList.add(_names);
                 }
-                dialog.dismiss();
+                mainAdapter.notifyDataSetChanged();
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(MainActivity.this, "cloud sync failed", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                //on load failing
+                Toast.makeText(MainActivity.this, "Data loading failed", Toast.LENGTH_SHORT).show();
             }
         });
+        
     }
-
-
-
 
     @Override
     public void onClicked(int pos) {
         Intent intent = new Intent(MainActivity.this, InsideOut.class);
-        intent.putExtra("house_name",mainDataArrayList.get(pos).getName());
-        intent.putExtra("loc",mainDataArrayList.get(pos).getLocation());
+        intent.putExtra("house_name",mainDataArrayList.get(pos));
         startActivity(intent);
+    }
+
+    @Override
+    public void onItemDeleted() {
+        swipeRefreshLayout.setRefreshing(true);
+        //obtaining new data set
+        obtainData();
+        swipeRefreshLayout.setRefreshing(false);
     }
 }

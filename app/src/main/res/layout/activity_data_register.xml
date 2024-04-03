@@ -63,7 +63,27 @@
                 android:id="@+id/text_tenant_number_reg"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Tenant number"/>
+                android:hint="Tenant number"
+                android:inputType="number"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layout_house_loc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/layout_tenant_number"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="15dp"
+            android:layout_marginEnd="15dp"
+            android:layout_marginTop="15dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/text_house_loc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="House location"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -71,7 +91,7 @@
             android:id="@+id/layout_room_id"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@+id/layout_tenant_number"
+            app:layout_constraintTop_toBottomOf="@+id/layout_house_loc"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginStart="15dp"
@@ -101,7 +121,8 @@
                 android:id="@+id/text_rent_price_reg"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Rent price"/>
+                android:hint="Rent price"
+                android:inputType="number"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 

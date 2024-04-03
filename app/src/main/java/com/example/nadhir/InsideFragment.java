@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.os.Parcelable;
 import android.view.LayoutInflater;
@@ -27,29 +28,33 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Objects;
 
 
 public class InsideFragment extends Fragment implements RecyclerItem{
     private RecyclerView recyclerView;
     private FloatingActionButton floatingActionButton;
     private ArrayList<CloudData> arrayList;
-    private TextInputEditText tenantName,tenantNumber,rentPrice,roomID,endDate;
+    private TextInputEditText tenantName,tenantNumber,house_loc,rentPrice,roomID,endDate;
     private TextInputLayout endDatePicker;
     private DatePickerDialog pickerDialog;
     private Button btnAdd;
     private Dialog dialog;
     private DatabaseReference databaseReference;
+    private SwipeRefreshLayout refreshLayout;
     InsideOutDataAdapter insideOutDataAdapter;
     java.util.Date date;
-    NadhirDBHelper helper;
 
 
     @Override
@@ -70,10 +75,9 @@ public class InsideFragment extends Fragment implements RecyclerItem{
         super.onViewCreated(view, savedInstanceState);
         recyclerView = view.findViewById(R.id.inside_recycler);
         floatingActionButton = view.findViewById(R.id.fab_inside);
-        helper = new NadhirDBHelper(getContext());
+        refreshLayout = view.findViewById(R.id.inside_swiper);
         databaseReference = FirebaseDatabase.getInstance().getReference("Nadhir/"+getActivity().getIntent().getStringExtra("house_name"));
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        arrayList = new ArrayList<>();
         //obtaining data
         obtainData();
         //adding new data to the system
@@ -81,13 +85,37 @@ public class InsideFragment extends Fragment implements RecyclerItem{
             addData();
         });
 
+        refreshLayout.setOnRefreshListener(()->{
+            obtainData();
+            refreshLayout.setRefreshing(false);
+        });
+
     }
 
     public void obtainData(){
-        arrayList = helper.getAllDetails(getContext(),getActivity().getIntent().getStringExtra("house_name"));
+        arrayList = new ArrayList<>();
         insideOutDataAdapter = new InsideOutDataAdapter(getContext(),arrayList,this);
         recyclerView.setAdapter(insideOutDataAdapter);
-        insideOutDataAdapter.notifyDataSetChanged();
+        //load data from cloud
+        databaseReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot snap :
+                        dataSnapshot.getChildren()) {
+                    CloudData cloud = snap.getValue(CloudData.class);
+                    if (Objects.equals(Objects.requireNonNull(cloud).getCategory(), "InsideTenants")){
+                        arrayList.add(cloud);
+                    }
+                }
+                insideOutDataAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                //on error occurred
+                Toast.makeText(getContext(), "An error occurred,Data load failed", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     public void addData(){
@@ -99,6 +127,7 @@ public class InsideFragment extends Fragment implements RecyclerItem{
         //initializing the sheet components
         tenantName = dialog.findViewById(R.id.text_tenant_name_reg);
         tenantNumber = dialog.findViewById(R.id.text_tenant_number_reg);
+        house_loc = dialog.findViewById(R.id.text_house_loc);
         rentPrice = dialog.findViewById(R.id.text_rent_price_reg);
         roomID = dialog.findViewById(R.id.text_room_id_reg);
         endDate = dialog.findViewById(R.id.text_end_date_reg);
@@ -129,37 +158,24 @@ public class InsideFragment extends Fragment implements RecyclerItem{
 
         CloudData cloudData = new CloudData(getActivity().getIntent().getStringExtra("house_name"),"InsideTenants",
                 tenantName.getText().toString(),tenantNumber.getText().toString(),roomID.getText().toString(),
-                getActivity().getIntent().getStringExtra("loc"),Double.valueOf(rentPrice.getText().toString()),date);
+                house_loc.getText().toString(),Double.valueOf(rentPrice.getText().toString()),date);
 
-        boolean status = helper.dataAddCloudDB(cloudData);
-        if (status){
-            tenantName.setText("");
-            tenantNumber.setText("");
-            roomID.setText("");
-            endDate.setText("");
-            Toast.makeText(getContext(), "Data added successful", Toast.LENGTH_SHORT).show();
-            dialog.dismiss();
-        }else {
-            Toast.makeText(getContext(), "unknown error occurred,data addition failed", Toast.LENGTH_SHORT).show();
-        }
-
-        //initiating cloud upload and status update on the local db
+        //initiating cloud upload.
         if (cloudData.getRoomNumber() != null){
-            String dataId = cloudData.getHouseNumber().concat("_").concat(cloudData.getRoomNumber());
+            String dataId = cloudData.getHouseNumber().concat("_"+cloudData.getCategory()).concat("_"+cloudData.getRoomNumber());
             databaseReference.child(dataId).setValue(cloudData,((error, ref)->{
                 if (error != null){
                     error.toException();
-                    helper.updateStat(cloudData.getHouseNumber(),cloudData.getRoomNumber(),false);
-                    Toast.makeText(getContext(), "Upload failed", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getContext(), "Upload failed,please check your internet connection", Toast.LENGTH_LONG).show();
                 }else {
-                    helper.updateStat(cloudData.getHouseNumber(),cloudData.getRoomNumber(),true);
+                    tenantNumber.setText("");tenantName.setText("");roomID.setText("");house_loc.setText("");rentPrice.setText("");endDate.setText("");
+                    dialog.dismiss();
                     Toast.makeText(getContext(), "Upload success", Toast.LENGTH_LONG).show();
                 }
             }));
         }
 
     }
-
 
     public void dateMaker(){
         DatePickerDialog.OnDateSetListener dateSetListener = new DatePickerDialog.OnDateSetListener() {
@@ -194,5 +210,13 @@ public class InsideFragment extends Fragment implements RecyclerItem{
 
         startActivity(intent);
 
+    }
+
+    @Override
+    public void onItemDeleted() {
+        refreshLayout.setRefreshing(true);
+        //obtaining new data set
+        obtainData();
+        refreshLayout.setRefreshing(false);
     }
 }
